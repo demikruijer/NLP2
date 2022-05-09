@@ -6,7 +6,7 @@ import pandas as pd
 import csv
 
 # 1: Class distributions 
-with open('data/olid-train.csv') as csv_file:
+with open('data1/olid-train.csv') as csv_file:
     test_data = pd.read_csv(csv_file)
 
 # print occurences of labels 
