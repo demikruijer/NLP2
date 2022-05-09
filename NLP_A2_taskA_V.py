@@ -84,9 +84,9 @@ def write_output(outfile, predictions, labels, input):
 
 
 if __name__ == '__main__':
-    train_path = "data/olid-train.csv"
-    dev_path = "data/olid-subset-diagnostic-tests.csv"
-    test_path = "data/olid-test.csv"
+    train_path = "data1/olid-train.csv"
+    dev_path = "data1/olid-subset-diagnostic-tests.csv"
+    test_path = "data1/olid-test.csv"
 
     # Note: this loads all instances into memory. If you work with bigger files in the future, use an iterator instead.
 
