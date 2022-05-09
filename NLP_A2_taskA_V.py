@@ -5,7 +5,7 @@
 # Frequency baseline: determines the class based on a frequency threshold
 from collections import Counter
 from statistics import mean
-
+import pandas as pd
 import numpy as np
 
 
@@ -13,72 +13,59 @@ import numpy as np
 
 def majority_baseline(train_sentences, train_labels, testinput, testlabels):
 
-     # TODO: determine the majority class based on the training data
-     # ...
-    print((train_labels[0]))
-    counterN = 0
-    counterC = 0
+     # Determine the majority class based on the training data
+    counterOff = 0
+    counterNot = 0
     for labels in train_labels:
-        counterN += labels.count("N")
-        counterC += labels.count("C")
-    if counterN > counterC:
-        majority_class = "N"
-    if counterC > counterN:
-        majority_class = "C"
+        if labels == 1:
+            counterOff += 1
+        elif labels == 0:
+            counterNot += 1
+    if counterOff > counterNot:
+        majority_class = 1
+    if counterNot > counterOff:
+        majority_class = 0
 
     predictions = []
-    instances = []
-
 
     for instance in testinput:
-        print(instance)
-        tokens = instance.split(" ")
-        instance_predictions = [majority_class for t in tokens]
-        predictions.append(instance_predictions)
-        instances.append(instance)
-        print(instance_predictions)
+        predictions.append(majority_class)
 
-    # TODO: calculate accuracy for the test input
-    # ...
-    labelcountN = 0
-    labelcountC = 0
+    # Calculate accuracy for the test input
+    labelcountOff = 0
+    labelcountNot = 0
 
     for labels in testlabels:
-        labelcountN += labels.count("N")
-        labelcountC += labels.count("C")
+        if labels == 1:
+            labelcountOff += 1
+        elif labels == 0:
+            labelcountNot += 1
 
-    if majority_class == "C":
-        accuracy = labelcountC / (labelcountN + labelcountC)
+    if majority_class == 1:
+        accuracy = labelcountOff / (labelcountOff + labelcountNot)
 
-    if majority_class == "N":
-        accuracy = labelcountN / (labelcountN + labelcountC)
+    if majority_class == 0:
+        accuracy = labelcountNot / (labelcountOff + labelcountNot)
 
+    print(accuracy, predictions)
     return accuracy, predictions
 
 
-def random_baseline(train_sentences, train_labels, testinput, testlabels, B = 100):
+def random_baseline(train_sentences, train_labels, testinput, test_labels, B = 100):
     np.random.seed(2020)
     predictions = []
-    instances = []
     correct = []
     accuracy = []
 
     for b in range(B):
         for i, instance in enumerate(testinput):
-            print(instance)
-            tokens = instance.split(" ")
-
-            instance_predictions = [np.random.choice(["C", "N"]) for t in tokens]
+            instance_predictions = np.random.choice([1, 0])
             predictions.append(instance_predictions)
+            if test_labels[i] == instance_predictions:
+                correct.append(1)
+            else: correct.append(0)
 
-            for j, label in enumerate(testlabels[i].split(' ')):
-                if label == instance_predictions[j]: correct.append(1)
-                else: correct.append(0)
-            instances.append(instance)
-            print(instance_predictions)
         accuracy.append(sum(correct) / len(correct))
-
-
 
     print(accuracy)
     accuracy = mean(accuracy)
@@ -86,80 +73,14 @@ def random_baseline(train_sentences, train_labels, testinput, testlabels, B = 10
     return accuracy, predictions
 
 
-
-def freq_baseline(train_sentences, train_labels, testinput, testlabels, treshold = 3):
-    predictions = []
-    instances = []
-    correct = []
-
-    word_frequencies = Counter()
-
-    for sentence in train_sentences:
-        words = []
-        for token in sentence:
-            words.append(token)
-        word_frequencies.update(words)
-
-    print(word_frequencies)
-    for i, instance in enumerate(testinput):
-        print(instance)
-        tokens = instance.split(" ")
-        instance_predictions = ["N" if word_frequencies[t] > treshold else "C" for t in tokens]
-        predictions.append(instance_predictions)
-        instances.append(instance)
-        print(instance_predictions)
-        print(testlabels[i])
-
-        for j, label in enumerate(testlabels[i].split(" ")):
-            if label == instance_predictions[j]: correct.append(1)
-            else: correct.append(0)
-
-    accuracy = sum(correct) / len(correct)
-
-    return accuracy, predictions
-
-def length_baseline(train_sentences, train_labels, testinput, testlabels, treshold = 3):
-    predictions = []
-    instances = []
-    correct = []
-    for i, instance in enumerate(testinput):
-        print(instance)
-        tokens = instance.split(" ")
-        instance_predictions = ["C" if len(t) > treshold else "N" for t in tokens]
-        predictions.append(instance_predictions)
-        instances.append(instance)
-        print(instance_predictions)
-        print(testlabels[i])
-
-        for j, label in enumerate(testlabels[i].split(" ")):
-            if label == instance_predictions[j]: correct.append(1)
-            else: correct.append(0)
-
-    accuracy = sum(correct) / len(correct)
-
-    return accuracy, predictions
-
-
 # TODO: output the predictions in a suitable way so that you can evaluate them
 def write_output(outfile, predictions, labels, input):
-    labels_list = []
-    print("Labels = ", labels)
-    for labs in labels:
 
-        x = labs.split(" ")
-        for label in x: label.strip()
-        #print(x[-1])
-        #if "\n" in x[-1]: x[-1].replace("\n", "")
-        labels_list.append(x)
-    print(labels_list)
-    with open(outfile, "w") as f:
+    with open(outfile, "w", encoding='utf8') as f:
         for i, sentences in enumerate(input):
-            tokens = sentences.split(" ")
-            for j, token in enumerate(tokens):
-                #print([token, labels[i][j], predictions[i][j]])
-                f.write("\t".join([token.strip(), labels_list[i][j].strip(), predictions[i][j]]))
-                f.write("\n")
-
+            f.write("\t".join([sentences, str(labels[i]), str(predictions[i])]))
+            f.write("\n")
+    return
 
 
 if __name__ == '__main__':
@@ -169,25 +90,24 @@ if __name__ == '__main__':
 
     # Note: this loads all instances into memory. If you work with bigger files in the future, use an iterator instead.
 
-    with open(train_path + "sentences.txt", encoding="utf8") as sent_file:
-        train_sentences = sent_file.readlines()
+    with open(train_path, encoding='utf8') as train_file:
+        train_data = pd.read_csv(train_file)
+        train_sentences = train_data["text"]
+        train_labels = train_data["labels"]
 
-    with open(train_path + "labels.txt") as label_file:
-        train_labels = label_file.readlines()
+    with open(test_path, encoding='utf8') as test_file:
+        test_data = pd.read_csv(test_file)
+        test_sentences = test_data["text"]
+        test_labels = test_data["labels"]
 
+    # Baselines
+    # Majority baseline
+    majority_accuracy, majority_predictions = majority_baseline(train_sentences, train_labels, test_sentences, test_labels)
+    write_output("majority_baseline.tsv", majority_predictions, test_labels, test_sentences)
 
-    with open(dev_path + "sentences.txt") as dev_file:
-        dev_sentences = dev_file.readlines()
+    # Random Baseline
+    majority_accuracy, majority_predictions = random_baseline(train_sentences, train_labels, test_sentences,
+                                                                test_labels)
+    write_output("random_baseline.tsv", majority_predictions, test_labels, test_sentences)
 
-    with open(train_path + "labels.txt") as dev_label_file:
-        dev_labels = dev_label_file.readlines()
-    with open(test_path + "sentences.txt") as testfile:
-        testinput = testfile.readlines()
-
-    with open(test_path + "labels.txt") as test_label_file:
-        testlabels = test_label_file.readlines()
-
-    majority_accuracy, majority_predictions = random_baseline(train_sentences, train_labels, testinput, testlabels)
-    write_output("random_baseline.tsv", majority_predictions, testlabels, testinput)
-    print(majority_accuracy)
 
